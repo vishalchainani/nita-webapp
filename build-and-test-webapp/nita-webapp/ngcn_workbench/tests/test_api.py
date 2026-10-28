@@ -365,6 +365,20 @@ def test_upload_workbook_invalid_host_returns_400(
 
 
 @pytest.mark.django_db
+def test_upload_workbook_with_no_data_returns_clear_400(
+    api_client, campus_network, monkeypatch
+):
+    monkeypatch.setattr(api_views, "parse_workbook", lambda f, pk: "empty_workbook")
+    response = api_client.post(
+        f"/api/v1/networks/{campus_network.id}/workbook/upload/",
+        {"file": io.BytesIO(b"xlsx-data")},
+        format="multipart",
+    )
+    assert response.status_code == 400
+    assert response.json()["message"] == "Workbook contains no data rows."
+
+
+@pytest.mark.django_db
 def test_upload_workbook_without_file_returns_400(api_client, campus_network):
     response = api_client.post(
         f"/api/v1/networks/{campus_network.id}/workbook/upload/",

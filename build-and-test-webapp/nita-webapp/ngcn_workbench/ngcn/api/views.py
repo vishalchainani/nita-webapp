@@ -617,7 +617,23 @@ class CampusNetworkViewSet(viewsets.ModelViewSet):
             )
         try:
             result = parse_workbook(up_file, pk)
-            if result != "invalid_host":
+            if result == "invalid_host":
+                return Response(
+                    {
+                        "status": "failure",
+                        "message": "Invalid data in host column in Excel file.",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if result == "empty_workbook":
+                return Response(
+                    {
+                        "status": "failure",
+                        "message": "Workbook contains no data rows.",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if result == "success":
                 dm = GridDataManager()
                 raw_sheets = dm.get_sheets_by_campus_network(pk)
                 sheets = []
@@ -630,10 +646,7 @@ class CampusNetworkViewSet(viewsets.ModelViewSet):
                     sheets.append({"name": name, "headers": headers, "rows": rows})
                 return Response({"workbook": sheets, "status": "success"})
             return Response(
-                {
-                    "status": "failure",
-                    "message": "Invalid data in host column in Excel file.",
-                },
+                {"status": "failure", "message": "Unable to parse Excel file."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except Exception as exc:
